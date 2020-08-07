@@ -1,0 +1,154 @@
+<html>
+<head>
+
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Optimal rendering on mobile devices. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" /> <!-- Optimal Internet Explorer compatibility -->
+  <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css"/>
+
+</head>
+<body>
+
+<!-- JavaScript SDK -->
+ <script src="https://www.paypal.com/sdk/js?components=hosted-fields,buttons&client-id=AWOe8o_B2R68GxYWuWiOYbbfWKjmZdULIWgoqQk9aM84nNSwKNqaX1d-Wyq8_vNQDaHnCeHGrWFkXsVT" data-client-token="eyJicmFpbnRyZWUiOnsiYXV0aG9yaXphdGlvbkZpbmdlcnByaW50IjoiZmViODBlZjIyMDA1NTdkZmMwMjY3ZTg2NmFhMzhhY2U0MDExOTQ3NTM5MDRlZGY3NzU4ZTU2OWJjZTA4NGE4MnxtZXJjaGFudF9pZD1yd3dua3FnMnhnNTZobTJuJnB1YmxpY19rZXk9NjNrdm4zN3Z0MjlxYjRkZiZjcmVhdGVkX2F0PTIwMjAtMDgtMDdUMDE6NDE6MDYuMTQxWiIsInZlcnNpb24iOiIzLXBheXBhbCJ9LCJwYXlwYWwiOnsiYWNjZXNzVG9rZW4iOiJBMjFBQUZ6ekpZX2dQVjlNa2VRVHNQb0RRd3NVQXN6UGFUS2dlMkFhZHFSdGZ2cS1UUnVSVlVteGRqbE9lV21VaHVyYmhIbjh4bXdpOEhrc1haVDVHN2VRSVdhQjFFVmJ3In19"></script>
+
+   <!-- Buttons container -->
+   <table border="0" align="center" valign="top" bgcolor="#FFFFFF" style="width:39%">
+    <tr>
+      <td colspan="2">
+        <div id="paypal-button-container"></div>
+      </td>
+    </tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
+  </table>
+
+  <div align="center"> or </div>
+
+  <!-- Advanced credit and debit card payments form -->
+  <div class='card_container'>
+    <form id='my-sample-form'>
+
+      <label for='card-number'>Card Number</label><div id='card-number' class='card_field'></div>
+      <div>
+        <label for='expiration-date'>Expiration Date</label><div id='expiration-date' class='card_field'></div>
+      </div>
+      <div>
+        <label for='cvv'>CVV</label><div id='cvv' class='card_field'></div>
+      </div>
+      
+      <br><br>
+      <button value='submit' id='submit' class='btn'>Pay</button>
+    </form>
+  </div>
+
+  <!-- Implementation -->
+  <script>
+    //Displays PayPal buttons
+    paypal.Buttons({
+      commit: false,
+         createOrder: function(data, actions) {
+          return fetch('/create-paypal-transaction', {
+            method: 'post',
+            headers: {
+              'content-type': 'application/json'
+            }
+          }).then(function(res) {
+            return res.json();
+          }).then(function(data) {
+            return data.orderId; // Use the same key name for order ID on the client and server
+          });
+        },
+        onCancel: function (data) {
+            // Show a cancel page, or return to cart
+         },
+        onApprove: function(data, actions) {
+          console.log('data: ', data);
+          return fetch('/capture-paypal-transaction', {
+            method: 'post',
+            headers: {
+              'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+              orderId: data.orderID
+            })
+          }).then(function(res) {
+            return res.json();
+          }).then(function(details) {
+            alert('Transaction funds captured from ' + details.payer_given_name);
+          })
+        }
+    }).render('#paypal-button-container');
+    // Eligibility check for advanced credit and debit card payments
+    if (paypal.HostedFields.isEligible()) {
+      paypal.HostedFields.render({
+        createOrder: function () {
+          return fetch('/create-paypal-transaction', {
+            method: 'post',
+            headers: {
+              'content-type': 'application/json'
+            }
+          }).then(function(res) {
+            return res.json();
+          }).then(function(data) {
+            return data.orderId; // Use the same key name for order ID on the client and server
+          });
+        }, // replace order-ID with the order ID
+        styles: {
+          'input': {
+            'font-size': '17px',
+            'font-family': 'helvetica, tahoma, calibri, sans-serif',
+            'color': '#3a3a3a'
+          },
+          ':focus': {
+            'color': 'black'
+          }
+        },
+        fields: {
+          number: {
+            selector: '#card-number',
+            placeholder: 'card number'
+          },
+          cvv: {
+            selector: '#cvv',
+            placeholder: 'card security number'
+          },
+          expirationDate: {
+            selector: '#expiration-date',
+            placeholder: 'mm/yy'
+          }
+        }
+      }).then(function (hf) {
+        $('#my-sample-form').submit(async function (event) {
+          event.preventDefault();
+          const submited = hf.submit({})
+          .then(function (data) {
+            console.log({ data: data.orderId })
+              return fetch('/capture-paypal-transaction', {
+                method: 'post',
+                headers: {
+                  'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                  orderId: data.orderId
+                })
+              }).then(function(res) {
+                return res.json();
+              }).then(function(details) {
+                console.log({ details })
+                alert('Transaction funds captured from ' + details.payer_given_name);
+              })
+            })
+          .catch(function(e) {
+            console.log('e: ', e)
+          });
+        });
+      });
+    }
+    else {
+      $('#my-sample-form').hide();  // hides the advanced credit and debit card payments fields if merchant isn't eligible
+    }
+  </script>
+
+  </body>
+  </html>
