@@ -12,8 +12,8 @@ const checkoutNodeJssdk = require('@paypal/checkout-server-sdk');
  * credentials context. Use this instance to invoke PayPal APIs, provided the
  * credentials have access.
  */
-function client() {
-    return new checkoutNodeJssdk.core.PayPalHttpClient(environment());
+function client(clientId, clientSecret) {
+    return new checkoutNodeJssdk.core.PayPalHttpClient(environment(clientId, clientSecret));
 }
 
 /**
@@ -22,10 +22,7 @@ function client() {
  * This sample uses SandboxEnvironment. In production, use LiveEnvironment.
  *
  */
-function environment() {
-    let clientId = 'AWOe8o_B2R68GxYWuWiOYbbfWKjmZdULIWgoqQk9aM84nNSwKNqaX1d-Wyq8_vNQDaHnCeHGrWFkXsVT';
-    let clientSecret = 'EGjZt1nyw9K8OtHK_WAvdHG8iMak4ylcDkWMPByz07RvOzF0pT6CePyCvJJQLYAZ7xQ85dmWJLta7Bkd';
-
+function environment(clientId, clientSecret) {
     return new checkoutNodeJssdk.core.SandboxEnvironment(
         clientId, clientSecret
     );

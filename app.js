@@ -3,7 +3,12 @@ const path = require('path');
 const paypal = require('@paypal/checkout-server-sdk');
 const payPalClient = require('./paypal-client');
 const bodyParser = require('body-parser');
+const axios = require('axios');
+const qs = require('querystring');
+const { get } = require('lodash');
 
+const clientId = 'AWOe8o_B2R68GxYWuWiOYbbfWKjmZdULIWgoqQk9aM84nNSwKNqaX1d-Wyq8_vNQDaHnCeHGrWFkXsVT';
+const clientSecret = 'EGjZt1nyw9K8OtHK_WAvdHG8iMak4ylcDkWMPByz07RvOzF0pT6CePyCvJJQLYAZ7xQ85dmWJLta7Bkd';
 
 const app = express();
 
@@ -20,8 +25,41 @@ const PORT = 8888;
 
 const router = express.Router();
 
-router.get('/', function (request, response) {
-  response.render('index', { title: 'Welcome!' });
+router.get('/', async function (request, response) {
+  let clientToken = null;
+  try {
+    const paypalAccessToken = await axios({
+      url: 'https://api.sandbox.paypal.com/v1/oauth2/token',
+      headers:  {
+          'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      auth: {
+        username: clientId,
+        password: clientSecret,
+      },
+      data: qs.stringify({
+        grant_type: 'client_credentials',
+    }),
+      method: 'POST',
+    });
+    
+    const accessToken = get(paypalAccessToken, 'data.access_token');
+    
+    const paypalClientToken = await axios({
+      url: 'https://api.sandbox.paypal.com/v1/identity/generate-token',
+      headers:  {
+        'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+      },
+      method: 'POST',
+    });
+
+    clientToken = get(paypalClientToken, 'data.client_token');
+  } catch(e) {
+    console.log(e);
+  }
+
+  response.render('index', { title: 'Welcome!', clientToken });
 });
 
 router.post('/create-paypal-transaction', async function (req, res) {
