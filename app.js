@@ -58,7 +58,7 @@ router.get('/', async function (request, response) {
   } catch(e) {
     console.log(e);
   }
-
+  console.log(clientToken)
   response.render('index', { title: 'Welcome!', clientToken });
 });
 
@@ -79,7 +79,7 @@ router.post('/create-paypal-transaction', async function (req, res) {
 
   let order;
   try {
-    order = await payPalClient.client().execute(request);
+    order = await payPalClient.client(clientId, clientSecret).execute(request);
     console.log('----------------------------------------')
     console.log(order)
     console.log('----------------------------------------')
@@ -106,7 +106,7 @@ router.post('/capture-paypal-transaction', async function (req, res) {
   const request = new paypal.orders.OrdersCaptureRequest(orderId);
   request.requestBody({});
   try {
-    const capture = await payPalClient.client().execute(request);
+    const capture = await payPalClient.client(clientId, clientSecret).execute(request);
 
     console.log('------------------------capture----------------------------');
     console.log(capture);
