@@ -6,9 +6,10 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const qs = require('querystring');
 const { get } = require('lodash');
+const paypalClient = require('./paypal-client');
 
 const clientId = 'AWOe8o_B2R68GxYWuWiOYbbfWKjmZdULIWgoqQk9aM84nNSwKNqaX1d-Wyq8_vNQDaHnCeHGrWFkXsVT';
-const clientSecret = 'EGjZt1nyw9K8OtHK_WAvdHG8iMak4ylcDkWMPByz07RvOzF0pT6CePyCvJJQLYAZ7xQ85dmWJLta7Bkd';
+const clientSecret = 'EIFtNl5dYCduAAI81V5ldi3IlZbJwtzRSRBhBPMhVkH1uKO6BVwG113J4ow_D054dSv9Bm4iLxDl6bKw';
 
 const app = express();
 
@@ -42,9 +43,9 @@ router.get('/', async function (request, response) {
     }),
       method: 'POST',
     });
-    
+
     const accessToken = get(paypalAccessToken, 'data.access_token');
-    
+
     const paypalClientToken = await axios({
       url: 'https://api.sandbox.paypal.com/v1/identity/generate-token',
       headers:  {
@@ -69,12 +70,40 @@ router.post('/create-paypal-transaction', async function (req, res) {
   request.prefer("return=representation");
   request.requestBody({
     intent: 'CAPTURE',
+    payer: {
+      name: {
+        given_name: "PayPal",
+        surname: "Customer"
+      },
+      address: {
+        address_line_1: '123 ABC Street',
+        address_line_2: 'Apt 2',
+        admin_area_2: 'San Jose',
+        admin_area_1: 'CA',
+        postal_code: '95121',
+        country_code: 'US'
+      },
+      email_address: "customer@domain.com",
+      phone: {
+        phone_type: "MOBILE",
+        phone_number: {
+          national_number: "14082508100"
+        }
+      }
+    },
     purchase_units: [{
       amount: {
         currency_code: 'USD',
         value: '220.00'
       }
-    }]
+    }],
+    application_context: {
+      shipping_preference: 'NO_SHIPPING'
+    },
+    billing_address: {
+      postal_code: "555555",
+      phone: "245234523452"
+    }
   });
 
   let order;
@@ -101,7 +130,7 @@ router.post('/create-paypal-transaction', async function (req, res) {
 router.post('/capture-paypal-transaction', async function (req, res) {
   console.log('/capture-paypal-transaction');
   console.log('/body', req.body);
-  
+
   const orderId = req.body.orderId;
   const request = new paypal.orders.OrdersCaptureRequest(orderId);
   request.requestBody({});
@@ -133,7 +162,31 @@ router.post('/capture-paypal-transaction', async function (req, res) {
   res.send(200);
 });
 
+router.get('/refund/:captureId', async (req, res, next) => {
+  try {
+    const { captureId } = req.params; // 95239267NY5212649
 
+    const request = new paypal.payments.CapturesRefundRequest(captureId);
+    paypal.payments.
+    request.requestBody({
+      amount: {
+        currency_code: 'USD',
+        value:         '22.22'
+      }
+    });
+
+    const refund = await paypalClient.client(clientId, clientSecret).execute(request);
+
+    console.log('------------------------------------REFUND--------------------------')
+    console.log(refund)
+    console.log('-------------------------------------END REFUND-------------------------')
+
+    return res.render('index');
+  } catch (e) {
+    console.log({ e })
+    return res.render('index');
+  }
+});
 
 
 app.use('/', router);

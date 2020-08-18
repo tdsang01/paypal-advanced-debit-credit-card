@@ -11,7 +11,7 @@
 <body>
 
 <!-- JavaScript SDK -->
- <script src="https://www.paypal.com/sdk/js?components=hosted-fields,buttons&client-id=AWOe8o_B2R68GxYWuWiOYbbfWKjmZdULIWgoqQk9aM84nNSwKNqaX1d-Wyq8_vNQDaHnCeHGrWFkXsVT" data-client-token="eyJicmFpbnRyZWUiOnsiYXV0aG9yaXphdGlvbkZpbmdlcnByaW50IjoiMDljNmQzYWNmMWZlMjIwZDc0NWEwM2U4ZDY5ZTJiMmUzYmY0Mjg4NTBkMGEzZWE5ZjI4YzhkZjFkMTRmMTBhM3xtZXJjaGFudF9pZD1yd3dua3FnMnhnNTZobTJuJnB1YmxpY19rZXk9NjNrdm4zN3Z0MjlxYjRkZiZjcmVhdGVkX2F0PTIwMjAtMDgtMTFUMDE6NDM6MDYuMTA1WiIsInZlcnNpb24iOiIzLXBheXBhbCJ9LCJwYXlwYWwiOnsiYWNjZXNzVG9rZW4iOiJBMjFBQUVFcXU0MW9mRkppYVkwT3RiVkFrRmh3SGZjTy1GR1NiNHV0ODMyaTM5YnZJU1htTWlpY0RtMFBDUzlpdzhQbEh2RXQ1LWM1aGUyOG9XVmpqLThDWnlzNC1VVlZBIn19"></script>
+ <script src="https://www.paypal.com/sdk/js?components=buttons&client-id=AWOe8o_B2R68GxYWuWiOYbbfWKjmZdULIWgoqQk9aM84nNSwKNqaX1d-Wyq8_vNQDaHnCeHGrWFkXsVT" data-client-token="eyJicmFpbnRyZWUiOnsiYXV0aG9yaXphdGlvbkZpbmdlcnByaW50IjoiNDlkYWQ3NzNjNjU5ZmJiY2ZjYmI5YzI4MTAyZTZjMThiNWRjYTJjYjhiOGI5ZGUwZTExNGIxMGQ0ODc2ZDg0NXxtZXJjaGFudF9pZD1yd3dua3FnMnhnNTZobTJuJnB1YmxpY19rZXk9NjNrdm4zN3Z0MjlxYjRkZiZjcmVhdGVkX2F0PTIwMjAtMDgtMThUMDI6MTQ6MTEuNDIxWiIsInZlcnNpb24iOiIzLXBheXBhbCJ9LCJwYXlwYWwiOnsiYWNjZXNzVG9rZW4iOiJBMjFBQUhFM1c4cmhsLTJXZ2FMc20wbEIyOXJtVk9xVlNPLXpucjJaQVRzc0VZcXRQTk9HeDZYS3hXQkFneUY2T0JDQUtlcHRWME5ucHI3dEgwQnZlZVNlazhzMGdRUlFnIn19"></script>
 
    <!-- Buttons container -->
    <table border="0" align="center" valign="top" bgcolor="#FFFFFF" style="width:39%">
@@ -22,25 +22,6 @@
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
   </table>
-
-  <div align="center"> or </div>
-
-  <!-- Advanced credit and debit card payments form -->
-  <div class='card_container'>
-    <form id='my-sample-form'>
-
-      <label for='card-number'>Card Number</label><div id='card-number' class='card_field'></div>
-      <div>
-        <label for='expiration-date'>Expiration Date</label><div id='expiration-date' class='card_field'></div>
-      </div>
-      <div>
-        <label for='cvv'>CVV</label><div id='cvv' class='card_field'></div>
-      </div>
-      
-      <br><br>
-      <button value='submit' id='submit' class='btn'>Pay</button>
-    </form>
-  </div>
 
   <!-- Implementation -->
   <script>
@@ -80,74 +61,6 @@
         }
     }).render('#paypal-button-container');
     // Eligibility check for advanced credit and debit card payments
-    if (paypal.HostedFields.isEligible()) {
-      paypal.HostedFields.render({
-        createOrder: function () {
-          return fetch('/create-paypal-transaction', {
-            method: 'post',
-            headers: {
-              'content-type': 'application/json'
-            }
-          }).then(function(res) {
-            return res.json();
-          }).then(function(data) {
-            return data.orderId; // Use the same key name for order ID on the client and server
-          });
-        }, // replace order-ID with the order ID
-        styles: {
-          'input': {
-            'font-size': '17px',
-            'font-family': 'helvetica, tahoma, calibri, sans-serif',
-            'color': '#3a3a3a'
-          },
-          ':focus': {
-            'color': 'black'
-          }
-        },
-        fields: {
-          number: {
-            selector: '#card-number',
-            placeholder: 'card number'
-          },
-          cvv: {
-            selector: '#cvv',
-            placeholder: 'card security number'
-          },
-          expirationDate: {
-            selector: '#expiration-date',
-            placeholder: 'mm/yy'
-          }
-        }
-      }).then(function (hf) {
-        $('#my-sample-form').submit(async function (event) {
-          event.preventDefault();
-          const submited = hf.submit({})
-          .then(function (data) {
-            console.log({ data: data.orderId })
-              return fetch('/capture-paypal-transaction', {
-                method: 'post',
-                headers: {
-                  'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                  orderId: data.orderId
-                })
-              }).then(function(res) {
-                return res.json();
-              }).then(function(details) {
-                console.log({ details })
-                alert('Transaction funds captured from ' + details.payer_given_name);
-              })
-            })
-          .catch(function(e) {
-            console.log('e: ', e)
-          });
-        });
-      });
-    }
-    else {
-      $('#my-sample-form').hide();  // hides the advanced credit and debit card payments fields if merchant isn't eligible
-    }
   </script>
 
   </body>
